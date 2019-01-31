@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+
+require "net/http"
+require "json"
+
+if ARGV.length != 1
+  puts "Please provide a symbol"
+  exit 1
+end
+
+class Quote
+  def self.get(symbol)
+    uri      = URI("https://api.iextrading.com/1.0/stock/#{symbol}/quote")
+    response = Net::HTTP.get_response(uri)
+
+    if response.is_a?(Net::HTTPSuccess)
+      new(JSON.parse(response.body))
+    end
+  end
+
+  def initialize(data)
+    @data = data
+  end
+
+  def method_missing(method_name, *args)
+    key = method_name.to_s
+    @data.key?(key) ? @data[key] : super
+  end
+end
+
+symbol = ARGV[0]
+
+quote = Quote.get(symbol)
+
+if quote
+  puts "#{quote.companyName} (#{quote.symbol}): $#{quote.latestPrice}"
+else
+  puts "No company found for symbol: `#{symbol}`"
+end
